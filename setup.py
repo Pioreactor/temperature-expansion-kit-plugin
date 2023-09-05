@@ -7,14 +7,14 @@ from setuptools import setup
 
 setup(
     name="temperature-expansion-kit-plugin",
-    version="0.0.1",
+    version="0.0.2",
     license="MIT",
-    description="",
+    description="This plugin is necessary to use the temperature expansion kit for the Pioreactor",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     author_email="cam@pioreactor.com",
     author="Cam Davidson-Pilon",
-    url="",
+    url="https://github.com/Pioreactor/temperature-expansion-kit-plugin",
     packages=find_packages(),
     include_package_data=True,
     install_requires=["adafruit-circuitpython-max31865"],
