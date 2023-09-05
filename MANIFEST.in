@@ -1,1 +1,3 @@
 include temperature_expansion_kit_plugin/post_install.sh
+include temperature_expansion_kit_plugin/ui/contrib/charts/temperature_downsampled.yaml
+include temperature_expansion_kit_plugin/additional_config.ini

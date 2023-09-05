@@ -56,6 +56,8 @@ class Thermostat(TemperatureAutomationJob):
         assert target_temperature is not None, "target_temperature must be set"
         self.target_temperature = float(target_temperature)
 
+        self.update_heater(self._determine_initial_duty_to_start(self.target_temperature))
+
         self.pid = PID(
             Kp=config.getfloat("temperature_automation.thermostat", "Kp"),
             Ki=config.getfloat("temperature_automation.thermostat", "Ki"),
@@ -66,8 +68,13 @@ class Thermostat(TemperatureAutomationJob):
             job_name=self.job_name,
             target_name="temperature",
             output_limits=(-2.5, 2.5),  # avoid whiplashing
-            derivative_smoothing=0.90,
+            derivative_smoothing=0.925,
         )
+
+    @staticmethod
+    def _determine_initial_duty_to_start(target_temperature: float) -> float:
+        # naive, can be improved with a calibration later. Scale by N%.
+        return max(0.4 * (3/2 * target_temperature - 39), 0)
 
     def execute(self):
         while not hasattr(self, "pid"):
@@ -338,7 +345,7 @@ class TemperatureControllerWithProbe(BackgroundJob):
             self.logger.warning(f"Change failed because of {str(e)}")
 
     def _update_heater(self, new_duty_cycle: float) -> bool:
-        self.heater_duty_cycle = clamp(0.0, round(float(new_duty_cycle), 2), 100.0)
+        self.heater_duty_cycle = clamp(0.0, float(new_duty_cycle), 100.0)
         self.pwm.change_duty_cycle(self.heater_duty_cycle)
 
         if self.heater_duty_cycle == 0.0:
@@ -439,7 +446,7 @@ class TemperatureControllerWithProbe(BackgroundJob):
 
         try:
             self.temperature = Temperature(
-                temperature=round(temperature, 2),
+                temperature=round(temperature, 4),
                 timestamp=current_utc_datetime(),
             )
 
