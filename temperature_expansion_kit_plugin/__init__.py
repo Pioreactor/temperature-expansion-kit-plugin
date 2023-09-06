@@ -15,29 +15,28 @@ from time import sleep
 from typing import Any
 from typing import Optional
 
-import click
 import board
+import click
 import digitalio
-import adafruit_max31865
-
+from max31865 import MAX31865
 from pioreactor import error_codes
 from pioreactor import exc
 from pioreactor import hardware
 from pioreactor import whoami
+from pioreactor.automations.temperature.base import TemperatureAutomationJob
 from pioreactor.background_jobs.base import BackgroundJob
+from pioreactor.background_jobs.temperature_control import TemperatureController
+from pioreactor.config import config
 from pioreactor.structs import Temperature
 from pioreactor.structs import TemperatureAutomation
 from pioreactor.utils import clamp
 from pioreactor.utils import local_intermittent_storage
 from pioreactor.utils.pwm import PWM
+from pioreactor.utils.streaming_calculations import PID
 from pioreactor.utils.timing import current_utc_datetime
 from pioreactor.utils.timing import current_utc_timestamp
 from pioreactor.utils.timing import RepeatedTimer
 from pioreactor.utils.timing import to_datetime
-from pioreactor.background_jobs.temperature_control import TemperatureController
-from pioreactor.automations.temperature.base import TemperatureAutomationJob
-from pioreactor.config import config
-from pioreactor.utils.streaming_calculations import PID
 
 
 class Thermostat(TemperatureAutomationJob):
@@ -74,7 +73,7 @@ class Thermostat(TemperatureAutomationJob):
     @staticmethod
     def _determine_initial_duty_to_start(target_temperature: float) -> float:
         # naive, can be improved with a calibration later. Scale by N%.
-        return max(0.4 * (3/2 * target_temperature - 39), 0)
+        return max(0.4 * (3 / 2 * target_temperature - 39), 0)
 
     def execute(self):
         while not hasattr(self, "pid"):
@@ -108,7 +107,7 @@ class Thermostat(TemperatureAutomationJob):
         self.pid.set_setpoint(self.target_temperature)
 
 
-class TemperatureControllerWithProbe(BackgroundJob):
+class TemperatureControllerWithProbe(BackgroundJob):  # TODO: this should be BaseAutomationJob
     """
 
     This job publishes to
@@ -130,7 +129,7 @@ class TemperatureControllerWithProbe(BackgroundJob):
     MAX_TEMP_TO_REDUCE_HEATING = (
         63.0  # ~PLA glass transition temp, and I've gone safely above this an it's not a problem.
     )
-    MAX_TEMP_TO_DISABLE_HEATING = 65.0 # okay in bursts
+    MAX_TEMP_TO_DISABLE_HEATING = 65.0  # okay in bursts
     MAX_TEMP_TO_SHUTDOWN = 66.0
 
     job_name = "temperature_control"
@@ -146,9 +145,9 @@ class TemperatureControllerWithProbe(BackgroundJob):
 
     def __init__(
         self,
-        automation_name: str,
         unit: str,
         experiment: str,
+        automation_name: str,
         **kwargs,
     ) -> None:
         super().__init__(unit=unit, experiment=experiment)
@@ -162,7 +161,6 @@ class TemperatureControllerWithProbe(BackgroundJob):
             self.logger.error("Heating PCB must be attached to Pioreactor HAT")
             self.clean_up()
             raise exc.HardwareNotFoundError("Heating PCB must be attached to Pioreactor HAT")
-
 
         self.pwm = self.setup_pwm()
         self.update_heater(0)
@@ -203,7 +201,6 @@ class TemperatureControllerWithProbe(BackgroundJob):
             self.clean_up()
             raise e
         self.automation_name = self.automation.automation_name
-
 
     @staticmethod
     def seconds_since_last_active_heating() -> float:
@@ -277,8 +274,8 @@ class TemperatureControllerWithProbe(BackgroundJob):
             self.set_automation(TemperatureAutomation(automation_name="only_record_temperature"))
 
         with local_intermittent_storage("temperature_and_heating") as cache:
-            cache['heating_pcb_temperature'] = averaged_temp
-            cache['heating_pcb_temperature_at'] = current_utc_timestamp()
+            cache["heating_pcb_temperature"] = averaged_temp
+            cache["heating_pcb_temperature_at"] = current_utc_timestamp()
 
         return averaged_temp
 
@@ -415,11 +412,10 @@ class TemperatureControllerWithProbe(BackgroundJob):
 
         return TMP1075(address=hardware.TEMP)
 
-    def setup_temperature_probe(self) -> adafruit_max31865.MAX31865:
-
+    def setup_temperature_probe(self) -> MAX31865:
         spi = board.SPI()
         cs = digitalio.DigitalInOut(board.D5)  # Chip select of the MAX31865 board.
-        sensor = adafruit_max31865.MAX31865(spi, cs,  rtd_nominal=1000.0, ref_resistor=4300.0,  wires=3, polarity=1)
+        sensor = MAX31865(spi, cs, rtd_nominal=1000.0, ref_resistor=4300.0, wires=3, polarity=1)
         return sensor
 
     def setup_pwm(self) -> PWM:
@@ -453,8 +449,6 @@ class TemperatureControllerWithProbe(BackgroundJob):
         except Exception as e:
             self.logger.debug(e, exc_info=True)
             self.logger.error(e)
-
-
 
 
 def start_temperature_control(
