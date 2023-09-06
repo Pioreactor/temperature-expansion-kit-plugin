@@ -415,7 +415,17 @@ class TemperatureControllerWithProbe(BackgroundJob):  # TODO: this should be Bas
     def setup_temperature_probe(self) -> MAX31865:
         spi = board.SPI()
         cs = digitalio.DigitalInOut(board.D5)  # Chip select of the MAX31865 board.
-        sensor = MAX31865(spi, cs, rtd_nominal=1000.0, ref_resistor=4300.0, wires=3, polarity=1)
+        sensor = MAX31865(
+            spi,
+            cs,
+            rtd_nominal=1000.0,
+            ref_resistor=4300.0,
+            wires=3,
+            polarity=1,
+            filter_frequency=config.getint(
+                "temperature_automation.config", "local_ac_hz", fallback=60
+            ),
+        )
         return sensor
 
     def setup_pwm(self) -> PWM:

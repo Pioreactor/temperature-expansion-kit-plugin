@@ -1,10 +1,9 @@
+# -*- coding: utf-8 -*-
 # vendored version of adafruit_max31865
 # some changes made by Cameron Davidson-Pilon
-
 # SPDX-FileCopyrightText: 2017 Tony DiCola for Adafruit Industries
 #
 # SPDX-License-Identifier: MIT
-
 """
 `adafruit_max31865`
 ====================================================
@@ -35,6 +34,8 @@ Implementation Notes
 
 * Adafruit's Bus Device library: https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
 """
+from __future__ import annotations
+
 import math
 import time
 
@@ -123,13 +124,11 @@ class MAX31865:
         rtd_nominal=100,
         ref_resistor=430.0,
         wires=2,
-        filter_frequency=60
+        filter_frequency: int = 60,
     ):
         self.rtd_nominal = rtd_nominal
         self.ref_resistor = ref_resistor
-        self._device = spi_device.SPIDevice(
-            spi, cs, baudrate=500000, polarity=polarity, phase=1
-        )
+        self._device = spi_device.SPIDevice(spi, cs, baudrate=500000, polarity=polarity, phase=1)
         # Set 50Hz or 60Hz filter.
         if filter_frequency not in (50, 60):
             raise ValueError("Filter_frequency must be a value of 50 or 60!")
@@ -272,7 +271,7 @@ class MAX31865:
         return resistance
 
     @property
-    def temperature(self):
+    def temperature(self) -> float:
         """Read the temperature of the sensor and return its value in degrees
         Celsius.
         """
