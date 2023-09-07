@@ -18,13 +18,12 @@ from typing import Optional
 import board
 import click
 import digitalio
-from max31865 import MAX31865
 from pioreactor import error_codes
 from pioreactor import exc
 from pioreactor import hardware
 from pioreactor import whoami
+from pioreactor.automations import BaseAutomationJob
 from pioreactor.automations.temperature.base import TemperatureAutomationJob
-from pioreactor.background_jobs.base import BackgroundJob
 from pioreactor.background_jobs.temperature_control import TemperatureController
 from pioreactor.config import config
 from pioreactor.structs import Temperature
@@ -37,6 +36,8 @@ from pioreactor.utils.timing import current_utc_datetime
 from pioreactor.utils.timing import current_utc_timestamp
 from pioreactor.utils.timing import RepeatedTimer
 from pioreactor.utils.timing import to_datetime
+
+from .max31865 import MAX31865
 
 
 class Thermostat(TemperatureAutomationJob):
@@ -107,7 +108,7 @@ class Thermostat(TemperatureAutomationJob):
         self.pid.set_setpoint(self.target_temperature)
 
 
-class TemperatureControllerWithProbe(BackgroundJob):  # TODO: this should be BaseAutomationJob
+class TemperatureControllerWithProbe(BaseAutomationJob):
     """
 
     This job publishes to
