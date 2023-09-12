@@ -56,6 +56,10 @@ class Thermostat(TemperatureAutomationJob):
         assert target_temperature is not None, "target_temperature must be set"
         self.target_temperature = float(target_temperature)
 
+        assert (
+            config.getfloat("temperature_automation.thermostat", "Kp") <= 1.0
+        ), "Kp is too high for this thermostat. Is the configuration correct?"
+
         self.update_heater(self._determine_initial_duty_to_start(self.target_temperature))
 
         self.pid = PID(
