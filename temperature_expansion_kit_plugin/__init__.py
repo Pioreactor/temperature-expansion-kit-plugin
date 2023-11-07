@@ -22,7 +22,7 @@ from pioreactor import error_codes
 from pioreactor import exc
 from pioreactor import hardware
 from pioreactor import whoami
-from pioreactor.automations import BaseAutomationJob
+from pioreactor.automations.base import AutomationJob
 from pioreactor.automations.temperature.base import TemperatureAutomationJob
 from pioreactor.background_jobs.temperature_control import TemperatureController
 from pioreactor.config import config
@@ -112,7 +112,7 @@ class Thermostat(TemperatureAutomationJob):
         self.pid.set_setpoint(self.target_temperature)
 
 
-class TemperatureControllerWithProbe(BaseAutomationJob):
+class TemperatureControllerWithProbe(AutomationJob):
     """
 
     This job publishes to
@@ -219,11 +219,11 @@ class TemperatureControllerWithProbe(BaseAutomationJob):
 
     def turn_off_heater(self) -> None:
         self._update_heater(0)
-        self.pwm.cleanup()
+        self.pwm.clean_up()
         # we re-instantiate it as some other process may have messed with the channel.
         self.pwm = self.setup_pwm()
         self._update_heater(0)
-        self.pwm.cleanup()
+        self.pwm.clean_up()
 
     def update_heater(self, new_duty_cycle: float) -> bool:
         """
@@ -404,7 +404,7 @@ class TemperatureControllerWithProbe(BaseAutomationJob):
 
         with suppress(AttributeError):
             self._update_heater(0)
-            self.pwm.cleanup()
+            self.pwm.clean_up()
 
         with suppress(AttributeError):
             self.automation_job.clean_up()
