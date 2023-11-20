@@ -22,8 +22,8 @@ from pioreactor import error_codes
 from pioreactor import exc
 from pioreactor import hardware
 from pioreactor import whoami
-from pioreactor.automations.base import AutomationJob
 from pioreactor.automations.temperature.base import TemperatureAutomationJob
+from pioreactor.background_jobs.base import BackgroundJob
 from pioreactor.background_jobs.temperature_control import TemperatureController
 from pioreactor.config import config
 from pioreactor.structs import Temperature
@@ -112,7 +112,7 @@ class Thermostat(TemperatureAutomationJob):
         self.pid.set_setpoint(self.target_temperature)
 
 
-class TemperatureControllerWithProbe(AutomationJob):
+class TemperatureControllerWithProbe(BackgroundJob):
     """
 
     This job publishes to
@@ -448,7 +448,7 @@ class TemperatureControllerWithProbe(AutomationJob):
         for _ in range(samples):
             _temperature = self.temperature_probe_driver.temperature
             if _temperature < -242.0:
-                raise ValueError("Record null temperature. Is the Pt1000 probe connected?")
+                raise ValueError("Recorded null temperature. Is the Pt1000 probe connected?")
 
             running_sum += _temperature
             sleep(0.05)
