@@ -30,13 +30,14 @@ repos:
         # https://flake8.pycqa.org/en/latest/user/error-codes.html
         - "--ignore=E203,E266,E501,W503,E402,E401"
         - "--per-file-ignores=*/__init__.py: F401"
+        - "--per-file-ignores=pioreactor/experiment_profiles/sly/*: F821"
 
 -   repo: https://github.com/pre-commit/mirrors-mypy
     rev: 'v1.4.1'  # Use the sha / tag you want to point at
     hooks:
     -   id: mypy
         additional_dependencies: [
-            msgspec==0.18.4,
+            msgspec==0.18.5,
             types-pkg_resources==0.1.3,
             types-paho-mqtt==1.6.0.6
         ]
