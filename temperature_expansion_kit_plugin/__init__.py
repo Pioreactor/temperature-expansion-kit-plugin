@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from contextlib import suppress
 from time import sleep
-from typing import Any
 from typing import Optional
 
 import board
@@ -37,7 +36,12 @@ from pioreactor.utils.timing import current_utc_timestamp
 from pioreactor.utils.timing import RepeatedTimer
 from pioreactor.utils.timing import to_datetime
 
-from .max31865 import MAX31865
+try:
+    from .max31865 import MAX31865
+except ImportError:
+    # if using in the plugins folder, we don't use . else we get
+    # "attempted relative import with no known parent package"
+    from max31865 import MAX31865  # type: ignore
 
 
 class Thermostat(TemperatureAutomationJob):
@@ -53,13 +57,16 @@ class Thermostat(TemperatureAutomationJob):
 
     def __init__(self, target_temperature: float | str, **kwargs) -> None:
         super().__init__(**kwargs)
-        assert target_temperature is not None, "target_temperature must be set"
+
+        self.logger.debug("Using thermostat from temperature_expansion_kit plugin")
+
+        if target_temperature is None:
+            raise ValueError("target_temperature must be set")
+
+        if config.getfloat("temperature_automation.thermostat", "Kp") > 1.0:
+            raise ValueError("Kp is too high for this thermostat. Is the configuration correct?")
+
         self.target_temperature = float(target_temperature)
-
-        assert (
-            config.getfloat("temperature_automation.thermostat", "Kp") <= 1.0
-        ), "Kp is too high for this thermostat. Is the configuration correct?"
-
         self.update_heater(self._determine_initial_duty_to_start(self.target_temperature))
 
         self.pid = PID(
@@ -156,6 +163,8 @@ class TemperatureControllerWithProbe(BackgroundJob):
         **kwargs,
     ) -> None:
         super().__init__(unit=unit, experiment=experiment)
+
+        self.logger.debug("Using temperature_control from temperature_expansion_kit plugin")
 
         if not hardware.is_HAT_present():
             self.logger.error("Pioreactor HAT must be present.")
