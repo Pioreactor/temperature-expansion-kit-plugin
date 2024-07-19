@@ -143,16 +143,6 @@ class TemperatureAutomationJobWithProbe(AutomationJob):
         self.latest_growth_rate_at: datetime = current_utc_datetime()
         self.latest_temperture_at: datetime = current_utc_datetime()
 
-    def on_init_to_ready(self):
-        if whoami.is_testing_env() or self.seconds_since_last_active_heating() >= 10:
-            # if we turn off heating and turn on again, without some sort of time to cool, the first temperature looks wonky
-            self.temperature = Temperature(
-                temperature=self.read_external_temperature(),
-                timestamp=current_utc_datetime(),
-            )
-
-            self._set_latest_temperature(self.temperature)
-
     @staticmethod
     def seconds_since_last_active_heating() -> float:
         with local_intermittent_storage("temperature_and_heating") as cache:
