@@ -214,6 +214,7 @@ class TemperatureAutomationJobWithProbe(AutomationJob):
                 temperature=round(temperature, 4),
                 timestamp=current_utc_datetime(),
             )
+            self._set_latest_temperature(self.temperature)
 
         except Exception as e:
             self.logger.debug(e, exc_info=True)
@@ -472,6 +473,11 @@ class TemperatureAutomationJobWithProbeContrib(TemperatureAutomationJobWithProbe
     automation_name: str
 
 
+available_temperature_automations: dict[str, type[TemperatureAutomationJobWithProbe]] = {}
+
+########## Automations below
+
+
 class Thermostat(TemperatureAutomationJobWithProbe):
     """
     Uses a PID controller to change the DC% to match a target temperature.
@@ -578,9 +584,6 @@ def start_temperature_automation(
         logger.error(f"Error: {e}")
         logger.debug(e, exc_info=True)
         raise e
-
-
-available_temperature_automations: dict[str, type[TemperatureAutomationJobWithProbe]] = {}
 
 
 @click.command(
