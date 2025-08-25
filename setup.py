@@ -7,7 +7,7 @@ from setuptools import setup
 
 setup(
     name="temperature-expansion-kit-plugin",
-    version="0.3.1",
+    version="0.4.0",
     license="MIT",
     description="This plugin is necessary to use the temperature expansion kit for the Pioreactor",
     long_description=open("README.md").read(),

@@ -29,7 +29,6 @@ from pioreactor.utils.streaming_calculations import PID
 from pioreactor.utils.timing import current_utc_datetime
 from pioreactor.utils.timing import current_utc_timestamp
 from pioreactor.utils.timing import RepeatedTimer
-from pioreactor.utils.timing import to_datetime
 
 try:
     from .max31865 import MAX31865
@@ -37,6 +36,11 @@ except ImportError:
     # if using in the plugins folder, we don't use . else we get
     # "attempted relative import with no known parent package"
     from max31865 import MAX31865  # type: ignore
+
+
+def is_20ml_v1() -> bool:
+    model = whoami.get_pioreactor_model()
+    return model.model_name == "pioreactor_20ml" and model.model_version == (1, 0)
 
 
 class TemperatureAutomationJobWithProbe(AutomationJob):
@@ -53,14 +57,14 @@ class TemperatureAutomationJobWithProbe(AutomationJob):
 
     INFERENCE_SAMPLES_EVERY_T_SECONDS: float = 5.0
 
-    if whoami.get_pioreactor_version() == (1, 0):
+    if is_20ml_v1():
         # made from PLA
         MAX_TEMP_TO_REDUCE_HEATING = 63.0
         MAX_TEMP_TO_DISABLE_HEATING = 65.0  # probably okay, but can't stay here for too long
         MAX_TEMP_TO_SHUTDOWN = 66.0
         INFERENCE_EVERY_N_SECONDS: float = 3
 
-    elif whoami.get_pioreactor_version() >= (1, 1):
+    else:
         # made from PC-CF
         MAX_TEMP_TO_REDUCE_HEATING = 78.0
         MAX_TEMP_TO_DISABLE_HEATING = 80.0
@@ -142,16 +146,6 @@ class TemperatureAutomationJobWithProbe(AutomationJob):
         self.latest_normalized_od_at: datetime = current_utc_datetime()
         self.latest_growth_rate_at: datetime = current_utc_datetime()
         self.latest_temperture_at: datetime = current_utc_datetime()
-
-    @staticmethod
-    def seconds_since_last_active_heating() -> float:
-        with local_intermittent_storage("temperature_and_heating") as cache:
-            if "last_heating_timestamp" in cache:
-                return (
-                    current_utc_datetime() - to_datetime(cache["last_heating_timestamp"])
-                ).total_seconds()
-            else:
-                return 1_000_000
 
     def turn_off_heater(self) -> None:
         self._update_heater(0)
