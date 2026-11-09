@@ -127,7 +127,7 @@ class TemperatureAutomationJobWithProbe(AutomationJob):
         self.heater_duty_cycle = 0.0
         self.pwm = self.setup_pwm()
 
-        self.heating_pcb_tmp_driver = TMP1075(address=hardware.TEMP)
+        self.heating_pcb_tmp_driver = TMP1075(address=hardware.get_temp_address())
         self.temperature_probe_driver = self.setup_temperature_probe()
 
         self.read_external_temperature_timer = RepeatedTimer(
@@ -377,7 +377,7 @@ class TemperatureAutomationJobWithProbe(AutomationJob):
         else:
             from pioreactor.utils.temps import TMP1075  # type: ignore
 
-        return TMP1075(address=hardware.TEMP)
+        return TMP1075(address=hardware.get_temp_address())
 
     def setup_temperature_probe(self) -> MAX31865:
         spi = board.SPI()
@@ -406,7 +406,7 @@ class TemperatureAutomationJobWithProbe(AutomationJob):
         hertz = 16  # technically this doesn't need to be high: it could even be 1hz. However, we want to smooth it's
         # impact (mainly: current sink), over the second. Ex: imagine freq=1hz, dc=40%, and the pump needs to run for
         # 0.3s. The influence of when the heat is one on the pump can be significant in a power-constrained system.
-        pin = hardware.PWM_TO_PIN[hardware.HEATER_PWM_TO_PIN]
+        pin = hardware.get_pwm_to_pin_map()[hardware.get_heater_pwm_channel()]
         pwm = PWM(pin, hertz, unit=self.unit, experiment=self.experiment)
         pwm.start(0)
         return pwm
@@ -549,7 +549,7 @@ def start_temperature_automation(
         klass = available_temperature_automations[automation_name]
     except KeyError:
         raise KeyError(
-            f"Unable to find {automation_name}. Available automations are {list( available_temperature_automations.keys())}"
+            f"Unable to find {automation_name}. Available automations are {list(available_temperature_automations.keys())}"
         )
 
     if "skip_first_run" in kwargs:
